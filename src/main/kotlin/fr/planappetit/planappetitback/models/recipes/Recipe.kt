@@ -2,8 +2,11 @@ package fr.planappetit.planappetitback.models.recipes
 
 import fr.planappetit.planappetitback.enums.CourseEnum
 import fr.planappetit.planappetitback.enums.SeasonEnum
+import fr.planappetit.planappetitback.models.users.User
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
 import java.util.UUID
@@ -23,5 +26,7 @@ data class Recipe(
     var course: CourseEnum = CourseEnum.MAIN,
     @OneToMany(mappedBy = "recipe")
     var steps: List<Step> = listOf(),
-    var season: SeasonEnum = SeasonEnum.ALL
+    var season: SeasonEnum = SeasonEnum.ALL,
+    @ManyToOne(cascade = [CascadeType.ALL])
+    val user : User,
 )

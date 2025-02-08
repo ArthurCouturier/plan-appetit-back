@@ -11,7 +11,8 @@ Content-Type: application/json
     "role": "MEMBER",
     "createdAt": "2025-02-07T10:00:00.000Z",
     "last_login": "2025-02-07T10:00:00.000Z",
-    "profile_photo": "profile photo url"
+    "profile_photo": "profile photo url",
+    "recipes": []
 }
 
 ###
