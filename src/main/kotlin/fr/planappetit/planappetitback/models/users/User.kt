@@ -3,6 +3,7 @@ package fr.planappetit.planappetitback.models.users
 import fr.planappetit.planappetitback.enums.UserRole
 import fr.planappetit.planappetitback.models.recipes.Recipe
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
 import jakarta.persistence.OneToMany
@@ -19,6 +20,7 @@ data class User(
     val uid: String = "",
     var email: String = "",
     var displayName: String = "",
+    @Column(length = 2048)
     var token: String? = null,
     var provider: String = "",
     var role: UserRole = UserRole.MEMBER,

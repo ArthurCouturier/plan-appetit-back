@@ -32,6 +32,7 @@ build/
 .env
 .env.prod
 .env.local
+planappetit-firebase-*
 
 ### VS Code ###
 .vscode/
