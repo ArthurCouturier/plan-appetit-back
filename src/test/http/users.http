@@ -20,3 +20,7 @@ Content-Type: application/json
 GET http://localhost:8080/api/v1/users/all
 
 ###
+
+GET http://localhost:8080/api/v1/users/a8b7cc7e-c09e-4673-8c5a-1d36ca56445a/recipes
+
+###

@@ -1,5 +1,6 @@
 package fr.planappetit.planappetitback.controllers
 
+import fr.planappetit.planappetitback.models.recipes.usual.Recipe
 import fr.planappetit.planappetitback.models.users.User
 import fr.planappetit.planappetitback.services.FirebaseService
 import fr.planappetit.planappetitback.services.UserService
@@ -50,5 +51,15 @@ class UserController(
             return ResponseEntity.status(HttpStatus.OK).body(null)
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+    }
+
+    @GetMapping("/{id}/recipes")
+    fun getRecipes(@PathVariable id: String): ResponseEntity<List<Recipe>> {
+        val user = userService.findUserByUid(id)
+        if (user != null) {
+            val recipes = userService.getRecipes(user)
+            return ResponseEntity.status(HttpStatus.OK).body(recipes)
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
     }
 }

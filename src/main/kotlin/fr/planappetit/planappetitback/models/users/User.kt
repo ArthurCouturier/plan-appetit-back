@@ -1,7 +1,7 @@
 package fr.planappetit.planappetitback.models.users
 
 import fr.planappetit.planappetitback.enums.UserRole
-import fr.planappetit.planappetitback.models.recipes.Recipe
+import fr.planappetit.planappetitback.models.recipes.usual.Recipe
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity

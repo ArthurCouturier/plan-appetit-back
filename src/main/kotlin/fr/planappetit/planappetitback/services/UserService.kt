@@ -2,6 +2,7 @@ package fr.planappetit.planappetitback.services
 
 import com.google.firebase.auth.FirebaseToken
 import fr.planappetit.planappetitback.enums.UserRole
+import fr.planappetit.planappetitback.models.recipes.usual.Recipe
 import fr.planappetit.planappetitback.models.users.PremiumAdvantages
 import fr.planappetit.planappetitback.models.users.User
 import fr.planappetit.planappetitback.repositories.PremiumAdvantagesRepository
@@ -37,9 +38,11 @@ class UserService(
             if (user.role > UserRole.MEMBER) {
                 advantages.remainingGeneratedRecipes = 1000
             }
+            val userCreated: User = userRepository.save(user)
+            premiumAdvantagesRepository.save(advantages)
+            return userCreated
         }
         val userCreated: User = userRepository.save(user)
-        premiumAdvantagesRepository.save(advantages)
         return userCreated
     }
 
@@ -76,5 +79,9 @@ class UserService(
         }
 
         return (firebaseEmail != null && firebaseEmail.equals(email, ignoreCase = true))
+    }
+
+    fun getRecipes(user: User): List<Recipe> {
+        return user.recipes
     }
 }
