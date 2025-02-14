@@ -14,18 +14,16 @@ class CorsConfig {
     fun corsConfigurer(): WebMvcConfigurer {
         return object : WebMvcConfigurer {
             override fun addCorsMappings(registry: CorsRegistry) {
-                registry.addMapping("/api/**")
-                    .allowedOrigins(
-                        "http://localhost:5173",
-                        "https://www.plan-appetit.fr",
-                        "https://plan-appetit.fr",
-                        "http://plan-appetit.vercel.app",
-                        "http://www.plan-appetit.fr",
-                        "http://plan-appetit.fr",
-                        "http://localhost"
+                registry.addMapping("/**")
+                    .allowedOriginPatterns(
+                        "http://localhost:*",
+                        "https://localhost:*",
+                        "http://*.plan-appetit.fr",
+                        "https://*.plan-appetit.fr"
                     )
                     .allowedMethods("GET", "POST", "PUT", "DELETE")
                     .allowedHeaders("*")
+                    .allowCredentials(true)
             }
         }
     }

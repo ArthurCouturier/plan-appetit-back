@@ -2,6 +2,7 @@ package fr.planappetit.planappetitback.services
 
 import com.google.firebase.auth.FirebaseToken
 import fr.planappetit.planappetitback.enums.UserRole
+import fr.planappetit.planappetitback.exceptions.UnCheckedIdentityException
 import fr.planappetit.planappetitback.models.recipes.usual.Recipe
 import fr.planappetit.planappetitback.models.users.PremiumAdvantages
 import fr.planappetit.planappetitback.models.users.User
@@ -16,8 +17,19 @@ import java.util.UUID
 class UserService(
     private val userRepository: UserRepository,
     private val premiumAdvantagesRepository: PremiumAdvantagesRepository,
-    private val firebaseService: FirebaseService
+    private val firebaseService: FirebaseService,
 ) {
+    fun getUserSecurely(
+        email: String,
+        token: String
+    ): User? {
+
+        val checked: Boolean = this.verifyUser(email, token.removePrefix("Bearer "))
+        if (!checked) {
+            throw UnCheckedIdentityException()
+        }
+        return this.findUserByEmail(email)
+    }
 
     fun findUserByUid(uid: String): User? {
         return userRepository.findById(uid).orElse(null)
@@ -27,7 +39,7 @@ class UserService(
         return userRepository.findByEmail(email)
     }
 
-    fun  findAll(): List<User> {
+    fun findAll(): List<User> {
         return userRepository.findAll()
     }
 

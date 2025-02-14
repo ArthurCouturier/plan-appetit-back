@@ -1,8 +1,8 @@
 package fr.planappetit.planappetitback.controllers
 
+import fr.planappetit.planappetitback.exceptions.UnCheckedIdentityException
 import fr.planappetit.planappetitback.models.recipes.usual.Recipe
 import fr.planappetit.planappetitback.models.users.User
-import fr.planappetit.planappetitback.services.FirebaseService
 import fr.planappetit.planappetitback.services.UserService
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -45,12 +45,19 @@ class UserController(
     }
 
     @GetMapping("/checkProfile")
-    fun checkProfile(@RequestHeader("Authorization") token: String): ResponseEntity<User?> {
-        val auth: Boolean = userService.verifyUser("arthur.couturier.2000@gmail.com", token.removePrefix("Bearer "))
-        if (auth) {
-            return ResponseEntity.status(HttpStatus.OK).body(null)
+    fun checkProfile(
+        @RequestHeader("Authorization") token: String,
+        @RequestHeader("Email") email: String
+    ): ResponseEntity<User?> {
+        try {
+            val user: User? = userService.getUserSecurely(email, token)
+            if  (user != null) {
+                return ResponseEntity.status(HttpStatus.OK).body(user)
+            }
+        }  catch (e: UnCheckedIdentityException) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null)
     }
 
     @GetMapping("/{id}/recipes")

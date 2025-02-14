@@ -5,7 +5,6 @@ data class RecipeFromOpenAI(
     val ingredients: List<IngredientFromOpenAI>?,
     val steps: List<StepFromOpenAI>?,
     var coversNb: Int = 0,
-    val costPrice: Number,
-    val buyPrice: Number,
-    val sellPrice: Number,
+    val costPrice: Number = 0,
+    val sellPrice: Number = 0,
 )

@@ -20,20 +20,20 @@ data class Recipe(
     @Id
     @GeneratedValue(generator = "uuid2")
     var uuid: UUID? = null,
-    var name: String = "",
-    @OneToMany(mappedBy = "recipe")
+    var name: String = "Nouvelle recette",
+    @OneToMany(mappedBy = "recipe", cascade = [CascadeType.ALL])
     var ingredients: MutableList<Ingredient> = mutableListOf(),
     var covers: Int = 0,
     var buyPrice: Number = 0.0,
     var sellPrice: Number = 0.0,
     var promotion: Number = 0.0,
     var course: CourseEnum = CourseEnum.MAIN,
-    @OneToMany(mappedBy = "recipe")
+    @OneToMany(mappedBy = "recipe", cascade = [CascadeType.ALL])
     var steps: MutableList<Step> = mutableListOf(),
     var season: List<SeasonEnum>? = listOf(),
-    @ManyToOne(cascade = [CascadeType.ALL])
+    @ManyToOne(cascade = [CascadeType.DETACH])
     @JsonIgnore
-    val user : User? = null,
+    var user : User? = null,
 ) {
     constructor() : this(
         uuid = null,
@@ -56,7 +56,7 @@ data class Recipe(
             Ingredient(i)
         } as MutableList<Ingredient>,
         covers = recipeFromOpenAI.coversNb,
-        buyPrice = recipeFromOpenAI.buyPrice,
+        buyPrice = recipeFromOpenAI.costPrice,
         sellPrice = recipeFromOpenAI.sellPrice,
         promotion = 0.0,
         course = CourseEnum.MAIN,

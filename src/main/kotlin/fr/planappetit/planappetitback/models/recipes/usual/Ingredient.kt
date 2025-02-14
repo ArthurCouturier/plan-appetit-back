@@ -20,9 +20,9 @@ data class Ingredient(
     var name: String = "",
     var category: IngredientCategoryEnum = IngredientCategoryEnum.OTHER,
     var season: MutableList<SeasonEnum> = mutableListOf(SeasonEnum.ALL),
-    @OneToOne
+    @OneToOne(cascade = [CascadeType.ALL])
     var quantity: Quantity? = null,
-    @ManyToOne(cascade = [CascadeType.ALL])
+    @ManyToOne(cascade = [CascadeType.DETACH])
     @JsonIgnore
     var recipe: Recipe? = null
 ) {

@@ -5,7 +5,7 @@ import fr.planappetit.planappetitback.enums.SeasonEnum
 data class RecipeGenerationParameters(
     val localisation: String,
     val seasons: List<SeasonEnum>,
-    val ingredient: String,
+    val ingredients: String,
     val book: Boolean,
     val vegan: Boolean,
     val allergens: String,
