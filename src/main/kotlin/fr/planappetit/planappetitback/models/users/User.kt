@@ -17,7 +17,7 @@ import java.util.Date
 data class User(
     // Firebase Generated ID
     @Id
-    val uid: String = "",
+    var uid: String = "",
     var email: String = "",
     var displayName: String = "",
     @Column(length = 2048)

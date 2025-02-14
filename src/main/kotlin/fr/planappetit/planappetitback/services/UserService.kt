@@ -22,13 +22,17 @@ class UserService(
     fun getUserSecurely(
         email: String,
         token: String
-    ): User? {
-
-        val checked: Boolean = this.verifyUser(email, token.removePrefix("Bearer "))
+    ): User {
+        val checked: Boolean = this.verifyUserOnFirebaseAndGetOrCreate(email, token.removePrefix("Bearer "))
         if (!checked) {
             throw UnCheckedIdentityException()
         }
-        return this.findUserByEmail(email)
+        val user = this.findUserByEmail(email)
+        if (user == null) {
+            throw UnCheckedIdentityException()
+        }
+        this.updateLastLoginOfExistingUser(user)
+        return user
     }
 
     fun findUserByUid(uid: String): User? {
@@ -44,6 +48,14 @@ class UserService(
     }
 
     fun saveUser(user: User): User {
+        val userFound = this.findUserByEmail(user.email)
+        if (userFound != null) {
+            user.displayName = userFound.displayName
+            user.createdAt = userFound.createdAt
+            user.lastLogin = Date.from(Instant.now())
+            user.uid = userFound.uid
+        }
+
         var advantages: PremiumAdvantages? = premiumAdvantagesRepository.findByUser(user)
         if (advantages == null) {
             advantages = PremiumAdvantages(user = user)
@@ -62,7 +74,13 @@ class UserService(
         userRepository.deleteById(uid)
     }
 
-    fun verifyUser(
+    private fun updateLastLoginOfExistingUser(user: User): Boolean {
+        user.lastLogin = Date.from(Instant.now())
+        this.userRepository.save(user)
+        return true
+    }
+
+    private fun verifyUserOnFirebaseAndGetOrCreate(
         email: String,
         token: String
     ): Boolean {

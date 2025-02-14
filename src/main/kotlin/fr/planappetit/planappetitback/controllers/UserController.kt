@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.time.Instant
+import java.util.Date
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -24,8 +26,12 @@ class UserController(
     private val appAdminSecret: String? = null
 
     @PostMapping("/register")
-    fun register(@RequestBody user: User): ResponseEntity<User?> {
-        val savedUser = userService.saveUser(user)
+    fun register(
+        @RequestHeader("Authorization") token: String,
+        @RequestBody user: User
+    ): ResponseEntity<User?> {
+        val userFound = userService.getUserSecurely(user.email, token)
+        val savedUser = userService.saveUser(userFound)
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser)
     }
 
@@ -44,14 +50,16 @@ class UserController(
         return ResponseEntity.status(HttpStatus.OK).body(users)
     }
 
-    @GetMapping("/checkProfile")
-    fun checkProfile(
+    @GetMapping("/connect")
+    fun connect(
         @RequestHeader("Authorization") token: String,
         @RequestHeader("Email") email: String
     ): ResponseEntity<User?> {
         try {
             val user: User? = userService.getUserSecurely(email, token)
             if  (user != null) {
+                user.lastLogin = Date.from(Instant.now())
+                userService.saveUser(user)
                 return ResponseEntity.status(HttpStatus.OK).body(user)
             }
         }  catch (e: UnCheckedIdentityException) {
