@@ -36,3 +36,5 @@ planappetit-firebase-*
 
 ### VS Code ###
 .vscode/
+
+docker-compose.yaml

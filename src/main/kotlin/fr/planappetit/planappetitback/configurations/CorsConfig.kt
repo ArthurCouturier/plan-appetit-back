@@ -18,10 +18,12 @@ class CorsConfig {
                     .allowedOriginPatterns(
                         "http://localhost:*",
                         "https://localhost:*",
-                        "http://*.plan-appetit.fr",
-                        "https://*.plan-appetit.fr"
+                        "https://plan-appetit.fr",
+                        "https://develop.plan-appetit.fr",
+                        "https://plan-appetit.fr",
+                        "https://develop.plan-appetit.fr"
                     )
-                    .allowedMethods("GET", "POST", "PUT", "DELETE")
+                    .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                     .allowedHeaders("*")
                     .allowCredentials(true)
             }
