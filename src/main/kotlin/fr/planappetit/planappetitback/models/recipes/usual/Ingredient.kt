@@ -27,7 +27,7 @@ data class Ingredient(
     )
     var quantity: Quantity? = null,
     @ManyToOne
-    @JoinColumn(name = "recipe_id")
+    @JoinColumn(name = "recipe_uuid")
     @JsonIgnore
     var recipe: Recipe? = null
 ) {

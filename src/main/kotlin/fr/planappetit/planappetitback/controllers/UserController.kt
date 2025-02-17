@@ -25,31 +25,6 @@ class UserController(
     @Value("app.admin.secret")
     private val appAdminSecret: String? = null
 
-    @PostMapping("/register")
-    fun register(
-        @RequestHeader("Authorization") token: String,
-        @RequestBody user: User
-    ): ResponseEntity<User?> {
-        val userFound = userService.authenticateAndSyncUser(user.email, token)
-        val savedUser = userService.saveOrUpdateUser(userFound)
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser)
-    }
-
-    @GetMapping("/{id}")
-    fun getUser(@PathVariable id: String): ResponseEntity<User?> {
-        val user = userService.getUserByUid(id)
-        return ResponseEntity.status(HttpStatus.OK).body(user)
-    }
-
-    @GetMapping("/all")
-    fun getAllUsers(@RequestHeader("Authorization") authorizationHeader: String): ResponseEntity<List<User>> {
-        if (!authorizationHeader.equals(appAdminSecret)) {
-            throw (RuntimeException("Unauthorized")) as Throwable;
-        }
-        val users = userService.getAllUsers()
-        return ResponseEntity.status(HttpStatus.OK).body(users)
-    }
-
     @GetMapping("/connect")
     fun connect(
         @RequestHeader("Authorization") token: String,
@@ -68,8 +43,33 @@ class UserController(
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null)
     }
 
+    @PostMapping("/register")
+    fun register(
+        @RequestHeader("Authorization") token: String,
+        @RequestBody user: User
+    ): ResponseEntity<User?> {
+        val userFound = userService.authenticateAndSyncUser(user.email, token)
+        val savedUser = userService.saveOrUpdateUser(userFound)
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedUser)
+    }
+
+    @GetMapping("/{id}")
+    fun readUser(@PathVariable id: String): ResponseEntity<User?> {
+        val user = userService.getUserByUid(id)
+        return ResponseEntity.status(HttpStatus.OK).body(user)
+    }
+
+    @GetMapping("/all")
+    fun readAllUsers(@RequestHeader("Authorization") authorizationHeader: String): ResponseEntity<List<User>> {
+        if (authorizationHeader != appAdminSecret) {
+            throw (RuntimeException("Unauthorized")) as Throwable;
+        }
+        val users = userService.getAllUsers()
+        return ResponseEntity.status(HttpStatus.OK).body(users)
+    }
+
     @GetMapping("/{id}/recipes")
-    fun getRecipes(@PathVariable id: String): ResponseEntity<List<Recipe>> {
+    fun readRecipesByUserUid(@PathVariable id: String): ResponseEntity<List<Recipe>> {
         val user = userService.getUserByUid(id)
         if (user != null) {
             val recipes = userService.getRecipesForUser(user)

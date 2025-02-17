@@ -49,9 +49,12 @@ class RecipeService(
         recipe.ingredients.forEach { ingredient ->
             ingredient.quantity!!.uuid = null
             ingredient.uuid = null
-            ingredient.recipe = null
+            ingredient.recipe = recipe
         }
-        recipe.steps.forEach { step -> step.uuid = null }
+        recipe.steps.forEach { step ->
+            step.uuid = null
+            step.recipe = recipe
+        }
         recipe.user = user
         return this.saveRecipe(recipe)
     }

@@ -9,7 +9,6 @@ import fr.planappetit.planappetitback.services.UserService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
-import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/recipes")
@@ -18,36 +17,32 @@ class RecipeController(
     private val recipeService: RecipeService,
 ) {
 
-    @GetMapping("/all")
-    fun allRecipes(
+    @PostMapping("/create")
+    fun createNewEmptyRecipe(
         @RequestHeader("Email") email: String,
         @RequestHeader("Authorization") token: String,
-    ): ResponseEntity<List<Recipe>> {
+    ): ResponseEntity<Recipe> {
         try {
-            val user: User? = userService.authenticateAndSyncUser(email, token)
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
-            }
+            val user: User = userService.authenticateAndSyncUser(email, token)
 
-            val recipes: MutableList<Recipe> = user.recipes
-            return ResponseEntity(recipes, HttpStatus.OK)
+            val recipe: Recipe = recipeService.createEmptyRecipe(user)
+            userService.saveOrUpdateUser(user)
+            return ResponseEntity.status(HttpStatus.OK).body(recipe)
 
         } catch (e: UnCheckedIdentityException) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
+
     }
 
     @PostMapping("/generate")
-    fun generateNewRecipeWithOpenAI(
+    fun createNewRecipeWithOpenAI(
         @RequestBody generationParameters: RecipeGenerationParameters,
         @RequestHeader("Email") email: String,
         @RequestHeader("Authorization") token: String,
     ): ResponseEntity<Recipe?> {
         try {
-            val user: User? = userService.authenticateAndSyncUser(email, token)
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
-            }
+            val user: User = userService.authenticateAndSyncUser(email, token)
 
             val recipe: Recipe? = recipeService.generateNewRecipeWithOpenAI(
                 user = user,
@@ -64,27 +59,6 @@ class RecipeController(
         } catch (e: UnCheckedIdentityException) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
-    }
-
-    @PostMapping("/create")
-    fun createRecipe(
-        @RequestHeader("Email") email: String,
-        @RequestHeader("Authorization") token: String,
-    ): ResponseEntity<Recipe> {
-        try {
-            val user: User? = userService.authenticateAndSyncUser(email, token)
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
-            }
-
-            val recipe: Recipe = recipeService.createEmptyRecipe(user)
-            userService.saveOrUpdateUser(user)
-            return ResponseEntity.status(HttpStatus.OK).body(recipe)
-
-        } catch (e: UnCheckedIdentityException) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-        }
-
     }
 
     @PostMapping("/import")
@@ -104,6 +78,46 @@ class RecipeController(
         }
     }
 
+    @GetMapping("/all")
+    fun readAllRecipesByUser(
+        @RequestHeader("Email") email: String,
+        @RequestHeader("Authorization") token: String,
+    ): ResponseEntity<List<Recipe>> {
+        try {
+            val user: User = userService.authenticateAndSyncUser(email, token)
+
+            val recipes: MutableList<Recipe> = user.recipes
+            return ResponseEntity(recipes, HttpStatus.OK)
+
+        } catch (e: UnCheckedIdentityException) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        }
+    }
+
+    @PatchMapping("/update")
+    fun updateRecipe(
+        @RequestHeader("Email") email: String,
+        @RequestHeader("Authorization") token: String,
+        @RequestBody recipe: Recipe,
+    ): ResponseEntity<Recipe> {
+        try {
+            val user = userService.authenticateAndSyncUser(email, token)
+
+            recipe.user = user
+            recipe.ingredients.forEach { ingredient ->
+                ingredient.quantity = ingredient.quantity
+                ingredient.recipe = recipe
+            }
+            recipe.steps.forEach { step ->
+                step.recipe = recipe
+            }
+            return ResponseEntity.status(HttpStatus.OK).body(recipeService.saveRecipe(recipe))
+
+        } catch (e: UnCheckedIdentityException) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        }
+    }
+
     @DeleteMapping("/delete/{id}")
     fun deleteRecipe(
         @RequestHeader("Email") email: String,
@@ -111,10 +125,7 @@ class RecipeController(
         @PathVariable("id") id: String
     ): ResponseEntity<Unit> {
         try {
-            val user: User? = userService.authenticateAndSyncUser(email, token)
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
-            }
+            val user: User = userService.authenticateAndSyncUser(email, token)
 
             recipeService.deleteRecipeByUuid(id)
             userService.saveOrUpdateUser(user)
