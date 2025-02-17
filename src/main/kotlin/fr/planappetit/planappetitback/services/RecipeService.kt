@@ -1,6 +1,5 @@
 package fr.planappetit.planappetitback.services
 
-import fr.planappetit.planappetitback.enums.UnitEnum
 import fr.planappetit.planappetitback.models.recipes.generation.RecipeGenerationParameters
 import fr.planappetit.planappetitback.models.recipes.usual.Recipe
 import fr.planappetit.planappetitback.models.users.User
@@ -20,34 +19,14 @@ class RecipeService(
     private val recipeGenerationService: RecipeGenerationService
 ) {
 
-    fun findRecipeByUuid(uuid: String): Recipe? {
-        return recipeRepository.findById(uuid).orElse(null)
-    }
-
-    fun findAll(): List<Recipe> {
-        return recipeRepository.findAll()
-    }
-
     fun createEmptyRecipe(user: User): Recipe {
         val recipe = Recipe(user = user)
-        this.registerNewRecipe(recipe)
+        this.saveRecipe(recipe)
         user.recipes.add(recipe)
         return recipe
     }
 
-    fun registerNewRecipe(recipe: Recipe): Recipe {
-        recipe.ingredients.forEach { ingredient ->
-            if (ingredient.quantity != null) {
-                if (!UnitEnum.entries.contains(ingredient.quantity!!.unit)) {
-                    ingredient.quantity!!.unit = UnitEnum.NONE
-                }
-                quantityRepository.save(ingredient.quantity!!)
-            }
-            ingredientRepository.save(ingredient)
-        }
-        recipe.steps.forEach { step ->
-            stepRepository.save(step)
-        }
+    fun saveRecipe(recipe: Recipe): Recipe {
         return recipeRepository.save(recipe)
     }
 
@@ -57,7 +36,7 @@ class RecipeService(
     ): Recipe? {
         val recipeFromOpenAI = recipeGenerationService.registerRecipe(params)
         val recipe = Recipe(recipeFromOpenAI = recipeFromOpenAI, user = user)
-        this.registerNewRecipe(recipe)
+        this.saveRecipe(recipe)
         user.recipes.add(recipe)
         return recipe
     }
@@ -66,10 +45,15 @@ class RecipeService(
         recipe: Recipe,
         user: User
     ): Recipe {
+        recipe.uuid = null
+        recipe.ingredients.forEach { ingredient ->
+            ingredient.quantity!!.uuid = null
+            ingredient.uuid = null
+            ingredient.recipe = null
+        }
+        recipe.steps.forEach { step -> step.uuid = null }
         recipe.user = user
-        this.registerNewRecipe(recipe)
-        user.recipes.add(recipe)
-        return recipe
+        return this.saveRecipe(recipe)
     }
 
     fun deleteRecipeByUuid(uuid: String) {

@@ -27,9 +27,17 @@ data class User(
     var createdAt: Date = Date(),
     var lastLogin: Date? = null,
     var profilePhoto: String? = null,
-    @OneToMany(mappedBy = "user")
+    @OneToMany(
+        mappedBy = "user",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true
+    )
     var recipes: MutableList<Recipe> = mutableListOf(),
-    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToOne(
+        mappedBy = "user",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true
+    )
     var premiumAdvantages: PremiumAdvantages? = null,
 ) {
 

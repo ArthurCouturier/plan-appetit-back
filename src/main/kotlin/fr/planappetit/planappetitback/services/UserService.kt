@@ -19,99 +19,74 @@ class UserService(
     private val premiumAdvantagesRepository: PremiumAdvantagesRepository,
     private val firebaseService: FirebaseService,
 ) {
-    fun getUserSecurely(
+    fun authenticateAndSyncUser(
         email: String,
-        token: String
+        bearerToken: String
     ): User {
-        val checked: Boolean = this.verifyUserOnFirebaseAndGetOrCreate(email, token.removePrefix("Bearer "))
-        if (!checked) {
-            throw UnCheckedIdentityException()
+        val token = bearerToken.removePrefix("Bearer ")
+        val decodedToken: FirebaseToken = firebaseService.getFirebaseTokenFromAuthToken(token)
+            ?: throw UnCheckedIdentityException("Token Firebase invalide.")
+
+        val firebaseEmail = decodedToken.email
+            ?: throw UnCheckedIdentityException("Email introuvable dans le token Firebase.")
+
+        if (!firebaseEmail.equals(email, ignoreCase = true)) {
+            throw UnCheckedIdentityException("L'email ne correspond pas à l'identité Firebase.")
         }
-        val user = this.findUserByEmail(email)
-        if (user == null) {
-            throw UnCheckedIdentityException()
-        }
-        this.updateLastLoginOfExistingUser(user)
+
+        val user = saveOrUpdateUser(
+            User(
+                uid = UUID.randomUUID().toString(),
+                email = firebaseEmail,
+                displayName = decodedToken.name ?: "",
+                token = token,
+                provider = "",
+                role = UserRole.MEMBER,
+                createdAt = Date.from(Instant.now()),
+                lastLogin = Date.from(Instant.now()),
+                profilePhoto = decodedToken.picture,
+                recipes = mutableListOf()
+            )
+        )
         return user
     }
 
-    fun findUserByUid(uid: String): User? {
+    fun getUserByUid(uid: String): User? {
         return userRepository.findById(uid).orElse(null)
     }
 
-    fun findUserByEmail(email: String): User? {
+    fun getUserByEmail(email: String): User? {
         return userRepository.findByEmail(email)
     }
 
-    fun findAll(): List<User> {
+    fun getAllUsers(): List<User> {
         return userRepository.findAll()
     }
 
-    fun saveUser(user: User): User {
-        val userFound = this.findUserByEmail(user.email)
-        if (userFound != null) {
-            user.displayName = userFound.displayName
-            user.createdAt = userFound.createdAt
-            user.lastLogin = Date.from(Instant.now())
-            user.uid = userFound.uid
+    fun saveOrUpdateUser(newUser: User): User {
+        val existingUser = getUserByEmail(newUser.email)
+        val userToSave = existingUser?.apply {
+            token = newUser.token
+            profilePhoto = newUser.profilePhoto
+            lastLogin = Date.from(Instant.now())
         }
+            ?: newUser
 
-        var advantages: PremiumAdvantages? = premiumAdvantagesRepository.findByUser(user)
-        if (advantages == null) {
-            advantages = PremiumAdvantages(user = user)
-            if (user.role > UserRole.MEMBER) {
-                advantages.remainingGeneratedRecipes = 1000
+        if (userToSave.premiumAdvantages == null) {
+            userToSave.premiumAdvantages = PremiumAdvantages(user = userToSave).apply {
+                if (userToSave.role > UserRole.MEMBER) {
+                    remainingGeneratedRecipes = 1000
+                }
             }
-            val userCreated: User = userRepository.save(user)
-            premiumAdvantagesRepository.save(advantages)
-            return userCreated
         }
-        val userCreated: User = userRepository.save(user)
-        return userCreated
+        return userRepository.save(userToSave)
     }
 
-    fun deleteUserByUid(uid: String) {
+    fun deleteUser(uid: String) {
         userRepository.deleteById(uid)
     }
 
-    private fun updateLastLoginOfExistingUser(user: User): Boolean {
-        user.lastLogin = Date.from(Instant.now())
-        this.userRepository.save(user)
-        return true
-    }
-
-    private fun verifyUserOnFirebaseAndGetOrCreate(
-        email: String,
-        token: String
-    ): Boolean {
-        val decodedToken: FirebaseToken? = firebaseService.getFirebaseTokenFromAuthToken(token)
-
-        if (decodedToken == null) {
-            return false
-        }
-
-        val firebaseEmail = decodedToken.email
-        val user = this.findUserByEmail(firebaseEmail)
-        if (user == null) {
-            this.saveUser(
-                User(
-                    uid = UUID.randomUUID().toString(),
-                    email = firebaseEmail,
-                    displayName = decodedToken.name,
-                    token = token,
-                    role = UserRole.MEMBER,
-                    createdAt = Date.from(Instant.now()),
-                    lastLogin = Date.from(Instant.now()),
-                    profilePhoto = decodedToken.picture,
-                    recipes = mutableListOf(),
-                )
-            )
-        }
-
-        return (firebaseEmail != null && firebaseEmail.equals(email, ignoreCase = true))
-    }
-
-    fun getRecipes(user: User): List<Recipe> {
+    fun getRecipesForUser(user: User): List<Recipe> {
         return user.recipes
     }
 }

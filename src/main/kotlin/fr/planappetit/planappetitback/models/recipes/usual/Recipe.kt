@@ -9,6 +9,7 @@ import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
@@ -21,17 +22,26 @@ data class Recipe(
     @GeneratedValue(generator = "uuid2")
     var uuid: UUID? = null,
     var name: String = "Nouvelle recette",
-    @OneToMany(mappedBy = "recipe", cascade = [CascadeType.ALL])
+    @OneToMany(
+        mappedBy = "recipe",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true
+    )
     var ingredients: MutableList<Ingredient> = mutableListOf(),
     var covers: Int = 0,
     var buyPrice: Number = 0.0,
     var sellPrice: Number = 0.0,
     var promotion: Number = 0.0,
     var course: CourseEnum = CourseEnum.MAIN,
-    @OneToMany(mappedBy = "recipe", cascade = [CascadeType.ALL])
+    @OneToMany(
+        mappedBy = "recipe",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true
+    )
     var steps: MutableList<Step> = mutableListOf(),
     var season: List<SeasonEnum>? = listOf(),
     @ManyToOne(cascade = [CascadeType.DETACH])
+    @JoinColumn(name = "user_uid")
     @JsonIgnore
     var user : User? = null,
 ) {

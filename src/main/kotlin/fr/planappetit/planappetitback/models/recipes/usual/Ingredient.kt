@@ -8,6 +8,7 @@ import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.OneToOne
 import java.util.UUID
@@ -20,9 +21,13 @@ data class Ingredient(
     var name: String = "",
     var category: IngredientCategoryEnum = IngredientCategoryEnum.OTHER,
     var season: MutableList<SeasonEnum> = mutableListOf(SeasonEnum.ALL),
-    @OneToOne(cascade = [CascadeType.ALL])
+    @OneToOne(
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true
+    )
     var quantity: Quantity? = null,
-    @ManyToOne(cascade = [CascadeType.DETACH])
+    @ManyToOne
+    @JoinColumn(name = "recipe_id")
     @JsonIgnore
     var recipe: Recipe? = null
 ) {

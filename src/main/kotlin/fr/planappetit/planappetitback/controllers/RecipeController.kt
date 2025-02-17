@@ -9,6 +9,7 @@ import fr.planappetit.planappetitback.services.UserService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import java.util.UUID
 
 @RestController
 @RequestMapping("/api/v1/recipes")
@@ -23,7 +24,7 @@ class RecipeController(
         @RequestHeader("Authorization") token: String,
     ): ResponseEntity<List<Recipe>> {
         try {
-            val user: User? = userService.getUserSecurely(email, token)
+            val user: User? = userService.authenticateAndSyncUser(email, token)
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
             }
@@ -43,7 +44,7 @@ class RecipeController(
         @RequestHeader("Authorization") token: String,
     ): ResponseEntity<Recipe?> {
         try {
-            val user: User? = userService.getUserSecurely(email, token)
+            val user: User? = userService.authenticateAndSyncUser(email, token)
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
             }
@@ -55,7 +56,9 @@ class RecipeController(
             if (recipe == null) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null)
             }
-            userService.saveUser(user)
+            user.premiumAdvantages!!.remainingGeneratedRecipes--
+            recipe.user = user
+            userService.saveOrUpdateUser(user)
             return ResponseEntity.status(HttpStatus.OK).body(recipe)
 
         } catch (e: UnCheckedIdentityException) {
@@ -69,13 +72,13 @@ class RecipeController(
         @RequestHeader("Authorization") token: String,
     ): ResponseEntity<Recipe> {
         try {
-            val user: User? = userService.getUserSecurely(email, token)
+            val user: User? = userService.authenticateAndSyncUser(email, token)
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
             }
 
             val recipe: Recipe = recipeService.createEmptyRecipe(user)
-            userService.saveUser(user)
+            userService.saveOrUpdateUser(user)
             return ResponseEntity.status(HttpStatus.OK).body(recipe)
 
         } catch (e: UnCheckedIdentityException) {
@@ -89,18 +92,14 @@ class RecipeController(
         @RequestHeader("Email") email: String,
         @RequestHeader("Authorization") token: String,
         @RequestBody recipe: Recipe,
-    ) : ResponseEntity<Recipe> {
+    ): ResponseEntity<Recipe> {
         try {
-            val user: User? = userService.getUserSecurely(email, token)
-            if (user == null) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
-            }
+            val user: User = userService.authenticateAndSyncUser(email, token)
 
             recipeService.importNewRecipe(recipe, user)
-            userService.saveUser(user)
             return ResponseEntity.status(HttpStatus.OK).body(recipe)
 
-        }  catch (e: UnCheckedIdentityException) {
+        } catch (e: UnCheckedIdentityException) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
     }
@@ -112,16 +111,16 @@ class RecipeController(
         @PathVariable("id") id: String
     ): ResponseEntity<Unit> {
         try {
-            val user: User? = userService.getUserSecurely(email, token)
+            val user: User? = userService.authenticateAndSyncUser(email, token)
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null)
             }
 
             recipeService.deleteRecipeByUuid(id)
-            userService.saveUser(user)
+            userService.saveOrUpdateUser(user)
             return ResponseEntity.status(HttpStatus.OK).build()
 
-        }  catch (e: UnCheckedIdentityException) {
+        } catch (e: UnCheckedIdentityException) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
         }
     }

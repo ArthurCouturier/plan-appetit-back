@@ -30,14 +30,14 @@ class UserController(
         @RequestHeader("Authorization") token: String,
         @RequestBody user: User
     ): ResponseEntity<User?> {
-        val userFound = userService.getUserSecurely(user.email, token)
-        val savedUser = userService.saveUser(userFound)
+        val userFound = userService.authenticateAndSyncUser(user.email, token)
+        val savedUser = userService.saveOrUpdateUser(userFound)
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser)
     }
 
     @GetMapping("/{id}")
     fun getUser(@PathVariable id: String): ResponseEntity<User?> {
-        val user = userService.findUserByUid(id)
+        val user = userService.getUserByUid(id)
         return ResponseEntity.status(HttpStatus.OK).body(user)
     }
 
@@ -46,7 +46,7 @@ class UserController(
         if (!authorizationHeader.equals(appAdminSecret)) {
             throw (RuntimeException("Unauthorized")) as Throwable;
         }
-        val users = userService.findAll()
+        val users = userService.getAllUsers()
         return ResponseEntity.status(HttpStatus.OK).body(users)
     }
 
@@ -56,10 +56,10 @@ class UserController(
         @RequestHeader("Email") email: String
     ): ResponseEntity<User?> {
         try {
-            val user: User? = userService.getUserSecurely(email, token)
+            val user: User? = userService.authenticateAndSyncUser(email, token)
             if  (user != null) {
                 user.lastLogin = Date.from(Instant.now())
-                userService.saveUser(user)
+                userService.saveOrUpdateUser(user)
                 return ResponseEntity.status(HttpStatus.OK).body(user)
             }
         }  catch (e: UnCheckedIdentityException) {
@@ -70,9 +70,9 @@ class UserController(
 
     @GetMapping("/{id}/recipes")
     fun getRecipes(@PathVariable id: String): ResponseEntity<List<Recipe>> {
-        val user = userService.findUserByUid(id)
+        val user = userService.getUserByUid(id)
         if (user != null) {
-            val recipes = userService.getRecipes(user)
+            val recipes = userService.getRecipesForUser(user)
             return ResponseEntity.status(HttpStatus.OK).body(recipes)
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).build()

@@ -6,6 +6,7 @@ import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import java.util.UUID
 
@@ -16,7 +17,8 @@ data class Step (
     var uuid: UUID? = null,
     var key: Number,
     var value: String,
-    @ManyToOne(cascade = [CascadeType.ALL])
+    @ManyToOne
+    @JoinColumn(name = "recipe_id")
     @JsonIgnore
     var recipe: Recipe? = null
 ) {
